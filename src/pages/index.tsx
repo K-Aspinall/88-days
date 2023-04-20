@@ -127,8 +127,8 @@ const TimeWorkedToggleView = (props: {request: string}) => {
 }
 
 
-const TimeWorkedView = (props: TimeWorkedWithUser & {cancellable: boolean}) => {
-  const {timeWorked, user, cancellable} = props
+const TimeWorkedView = (props: TimeWorkedWithUser) => {
+  const {timeWorked, user} = props
   return (
     <div className={`flex w-full p-4 gap-5 border-slate-400 items-center ${timeWorked.status ? "bg-green-50 rounded-lg" : ""}`} key={timeWorked.id}>
       <Image 
@@ -168,14 +168,14 @@ const TimeWorkedFeed = () => {
       <p className="font-bold text-lg">Work that counts:</p>
       {/* Only showing approved requests for user */}
       {data.filter(x => x.timeWorked.status).map((fullRequest) => 
-        <TimeWorkedView {...fullRequest} cancellable={true} key={fullRequest.timeWorked.id}/>
+        <TimeWorkedView {...fullRequest} key={fullRequest.timeWorked.id}/>
       )}
     </div>
     {/* Invalid Work Row */}
     <div className="flex w-full flex-col gap-4">
       <p className="font-bold text-lg">Other work:</p>
         {data.filter(x => !x.timeWorked.status).map((fullRequest) => 
-          <TimeWorkedView {...fullRequest} cancellable={false} key={fullRequest.timeWorked.id}/>
+          <TimeWorkedView {...fullRequest} key={fullRequest.timeWorked.id}/>
         )}
     </div>
     
@@ -253,10 +253,11 @@ const Home: NextPage = () => {
       <Head>
         <title>88-Days</title>
         <meta name="description" content="Work tracking for 88 days" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png"/>
-        <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png"/>
-        <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png"/>
-        <link rel="manifest" href="/public/site.webmanifest"></link>
+        <link rel="icon" href="/favicon.ico" />
+        {/* <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/> */}
+        {/* <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/> */}
+        {/* <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/> */}
+        {/* <link rel="manifest" href="/site.webmanifest"></link> */}
       </Head>
       <main className="flex h-screen justify-center">
         <div className="h-full w-full md:max-w-6xl flex flex-col gap-5">

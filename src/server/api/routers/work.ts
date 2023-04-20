@@ -1,6 +1,7 @@
 import type { User } from "@clerk/nextjs/dist/api"
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
+import dayjs from "dayjs";
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure, publicProcedure } from "~/server/api/trpc";
 
@@ -44,6 +45,20 @@ export const worksRouter = createTRPCRouter({
         return {timeWorked, user: {...user, username: user.username}}})
   }),
 
+  getValidTime: privateProcedure.query(async ({ ctx }) => {
+    const userId = ctx.userId;
+    const timeWorked = await ctx.prisma.timeWorked.findMany({
+      where: {
+        userId: userId
+      }
+    })
+
+    const days = timeWorked.map(x => x.days).reduce((sum: number, current: number) => sum + current, 0);
+
+    return {days}
+
+  }),
+
   // Use zod to check range typing
   create: privateProcedure.input(z.object({
     start: z.date(),
@@ -54,7 +69,10 @@ export const worksRouter = createTRPCRouter({
   })).mutation(async ({ctx, input}) => {
     const userId = ctx.userId;
     // TODO: Calculate days here
-    const daysWorked = 0
+    const beg = dayjs(input.start)
+    const end = dayjs(input.end)
+    // Add one day here as should be inclusive
+    const daysWorked = end.diff(beg, 'day') + 1
     const timeWorked = await ctx.prisma.timeWorked.create({
         data: {
             userId,

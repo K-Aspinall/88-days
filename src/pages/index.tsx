@@ -40,6 +40,7 @@ const UserHeader = () => {
         width={56}
         height={56}
       />
+      <h1>88 Days</h1>
       <div className="flex gap-3"> 
         <SignOutButton/>
       </div>
@@ -84,7 +85,7 @@ const CreateTimeWorked = () => {
 
   return (
     <div className="flex items-center w-full gap-3 p-4 bg-blue-50 rounded-lg">
-      <p className="font-bold text-lg">Taking some time off?</p>
+      <p className="font-bold text-lg">Log time worked</p>
       <div className="flex w-full gap-3">
         <Datepicker 
           value={dateRange} 
@@ -98,8 +99,8 @@ const CreateTimeWorked = () => {
         />
         <input className="w-full py-2 px-4 rounded-md bg-white outline-none" 
           placeholder="Add Location"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)} />
+          value={location}
+          onChange={(e) => setLocation(e.target.value)} />
         <input className="w-full py-2 px-4 rounded-md bg-white outline-none" 
           placeholder="Add any extra details..."
           value={notes}
@@ -114,6 +115,29 @@ const CreateTimeWorked = () => {
     </div>
   );
 }; 
+
+const TimeRemainingView = () => {
+  const {data, isLoading} = api.work.getValidTime.useQuery()
+
+  if(isLoading) return <div>{"Loading..."}</div>
+
+  if (!data) return <div>{"No data found :("}</div>
+
+  const DAYS_REQUIRED = 88
+  const daysRemaining = DAYS_REQUIRED - data.days
+  return (
+    <div className="flex w-full flex-row justify-between items-center">
+      <div className="flex w-full flex-col">
+        <h1>Days worked:</h1>
+        <h1>{data.days}</h1>
+      </div>
+      <div className="flex w-full flex-col">
+      <h1>Days remaining:</h1>
+      <h1>{daysRemaining}</h1>
+      </div>
+    </div>
+  )
+}
 
 const TimeWorkedToggleView = (props: {request: string}) => {
   const { mutate } = api.work.delete.useMutation();
@@ -254,10 +278,10 @@ const Home: NextPage = () => {
         <title>88-Days</title>
         <meta name="description" content="Work tracking for 88 days" />
         <link rel="icon" href="/favicon.ico" />
-        {/* <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/> */}
-        {/* <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/> */}
-        {/* <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/> */}
-        {/* <link rel="manifest" href="/site.webmanifest"></link> */}
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
+        <link rel="manifest" href="/site.webmanifest"></link>
       </Head>
       <main className="flex h-screen justify-center">
         <div className="h-full w-full md:max-w-6xl flex flex-col gap-5">
@@ -272,6 +296,7 @@ const Home: NextPage = () => {
             {!!isSignedIn && <UserHeader />}
           </div>
           {!!isSignedIn && <CreateTimeWorked />}
+          {!!isSignedIn && <TimeRemainingView />}
           {!!isSignedIn && <DisplayCalander />}
           {!!isSignedIn && <TimeWorkedFeed />}
         </div>

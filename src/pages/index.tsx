@@ -48,8 +48,6 @@ const UserHeader = () => {
     </div>
 }
 
-
-const now = new Date()
 const CreateTimeWorked = () => { 
   const [dateRange, setDateRange] = useState<DateValueType>({ 
     startDate: null, 
@@ -57,7 +55,7 @@ const CreateTimeWorked = () => {
   }); 
   const [notes, setNotes] = useState<string | undefined>(undefined);
   const [location, setLocation] = useState<string | undefined>(undefined);
-  const [valid, setValid] = useState<boolean>(true);
+  const [valid, setValid] = useState<boolean>(false);
 
   const handleValueChange = (newValue: SetStateAction<DateValueType>) => {
     console.log("newValue:", newValue); 
@@ -84,15 +82,14 @@ const CreateTimeWorked = () => {
   if ( !user ) return null;
 
   return (
-    <div className="flex items-center w-full gap-3 p-4 bg-blue-50 rounded-lg">
+    <div className="flex items-center w-full gap-3 p-4 bg-blue-50 rounded-lg mobile:flex-col sm:flex-row">
       <p className="font-bold text-lg">Log time worked</p>
-      <div className="flex w-full gap-3">
+      <div className="flex w-full gap-3 mobile:flex-col sm:flex-row">
         <Datepicker 
           value={dateRange} 
           onChange={handleValueChange} 
           showShortcuts={false}
           useRange={false}
-          minDate={new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)}
           separator="to"
           displayFormat={"DD/MM/YYYY"}
           readOnly={false} 
@@ -105,6 +102,13 @@ const CreateTimeWorked = () => {
           placeholder="Add any extra details..."
           value={notes}
           onChange={(e) => setNotes(e.target.value)} />
+          <div className="flex flex-column items-center">
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" value="" className="sr-only peer" onChange={() => setValid(!valid)}/>
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            </label>
+            <span className="ml-3 text-sm font-medium dark:text-gray-300">Valid</span>
+          </div>
         <button 
           className="enabled:bg-blue-500 enabled:hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:cursor-not-allowed disabled:bg-blue-200" 
           onClick={() => handleMutate()}
@@ -126,7 +130,7 @@ const TimeRemainingView = () => {
   const DAYS_REQUIRED = 88
   const daysRemaining = DAYS_REQUIRED - data.days
   return (
-    <div className="flex w-full flex-row justify-between items-center">
+    <div className="flex w-full mobile:flex-col sm:flex-row justify-between items-center">
       <div className="flex w-full flex-col">
         <h1>Days worked:</h1>
         <h1>{data.days}</h1>
@@ -162,15 +166,16 @@ const TimeWorkedView = (props: TimeWorkedWithUser) => {
         width={48}
         height={48}
       />
-      <div className="flex w-full flex-row justify-between items-center">
+      <div className="flex w-full flex-row justify-between items-center mobile:flex-col">
         <div className="flex w-full flex-col gap-1">
-          <div className="flex w-full ">
+          <div className="flex w-full">
             <span>{dayjs(timeWorked.begining).format("DD/MM")}</span><span>{` - ${dayjs(timeWorked.end).format("DD/MM")}`}</span>
           </div>
-          <div className="flex text-slate-400 gap-2">
-          <span>{`requested`}</span><span>{` - ${dayjs(timeWorked.createdAt).fromNow()}`}</span>
-        </div>
-        <span>{timeWorked.notes}</span>
+          <div className="flex text-slate-400 gap-2 mobile:flex-col">
+            <span>{`requested`}</span>
+            <span>{` - ${dayjs(timeWorked.createdAt).fromNow()}`}</span>
+          </div>
+          <span>{timeWorked.notes}</span>
         </div>
         <TimeWorkedToggleView request={timeWorked.id} />
       </div>
@@ -186,11 +191,10 @@ const TimeWorkedFeed = () => {
   
   if (!data || !user) return <div>{"No data found :("}</div>
 
-  return <div className="flex w-full flex-row gap-6 justify-between">
+  return <div className="flex w-full sm:flex-row mobile:flex-col gap-6 justify-between">
     {/* Valid Work Row */}
     <div className="flex w-4/5 flex-col gap-4">
       <p className="font-bold text-lg">Work that counts:</p>
-      {/* Only showing approved requests for user */}
       {data.filter(x => x.timeWorked.status).map((fullRequest) => 
         <TimeWorkedView {...fullRequest} key={fullRequest.timeWorked.id}/>
       )}

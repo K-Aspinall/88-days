@@ -5,10 +5,6 @@ import dayjs from "dayjs";
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure, publicProcedure } from "~/server/api/trpc";
 
-// export type timeWorkedAndUsername = timeWorked & {
-//   username: string
-// }
-
 export type timeWorkedAndUsername = {
   id: string, 
   begining: Date, 
@@ -19,23 +15,24 @@ export type timeWorkedAndUsername = {
   username: string
 }
 
-
 const filterUserForClient = (user: User) => {
     return {id: user.id, username: user.username, profileImageUrl: user.profileImageUrl}
 }
 
 export const worksRouter = createTRPCRouter({
-  // Gets all non-rejected timeWorkeds
-  getAll: publicProcedure.query(async ({ ctx }) => {
+  getAll: privateProcedure.query(async ({ ctx }) => {
+    const userId = ctx.userId;
     const timeWorked = await ctx.prisma.timeWorked.findMany({
         take: 200,
+        where: {
+          userId: userId
+        }
     });
 
     const users = (await clerkClient.users.getUserList({
         userId: timeWorked.map(work => work.userId),
         limit: 100
     })).map(filterUserForClient);
-    // Add filtering for admin accounts/users own at later date
 
     return timeWorked.map(timeWorked => {
         const user = users.find((user) => user.id === timeWorked.userId)
@@ -68,7 +65,7 @@ export const worksRouter = createTRPCRouter({
     notes: z.string().optional(),
   })).mutation(async ({ctx, input}) => {
     const userId = ctx.userId;
-    // TODO: Calculate days here
+  
     const beg = dayjs(input.start)
     const end = dayjs(input.end)
     // Add one day here as should be inclusive

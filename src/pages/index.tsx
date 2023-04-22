@@ -130,14 +130,14 @@ const TimeRemainingView = () => {
   const DAYS_REQUIRED = 88
   const daysRemaining = DAYS_REQUIRED - data.days
   return (
-    <div className="flex w-full mobile:flex-col sm:flex-row justify-between items-center">
-      <div className="flex w-full flex-col">
-        <h1>Days worked:</h1>
-        <h1>{data.days}</h1>
+    <div className="flex w-full p-6 gap-6 mobile:flex-col sm:flex-row justify-center align-middle items-center">
+      <div className="flex w-full flex-col gap-6 justify-center align-middle">
+        <h1 className="font-bold text-center">Days worked:</h1>
+        <span className="text-black font-bold text-3xl w-full text-center">{data.days}</span>
       </div>
-      <div className="flex w-full flex-col">
-      <h1>Days remaining:</h1>
-      <h1>{daysRemaining}</h1>
+      <div className="flex w-full flex-col gap-6 justify-center align-middle">
+        <h1 className="font-bold text-center">Days remaining:</h1>
+        <span className="text-black font-bold text-3xl w-full text-center">{daysRemaining}</span>
       </div>
     </div>
   )
@@ -166,14 +166,12 @@ const TimeWorkedView = (props: TimeWorkedWithUser) => {
         width={48}
         height={48}
       />
-      <div className="flex w-full flex-row justify-between items-center mobile:flex-col">
+      <div className="flex w-full sm:flex-row justify-between items-center mobile:flex-col">
         <div className="flex w-full flex-col gap-1">
-          <div className="flex w-full">
-            <span>{dayjs(timeWorked.begining).format("DD/MM")}</span><span>{` - ${dayjs(timeWorked.end).format("DD/MM")}`}</span>
-          </div>
-          <div className="flex text-slate-400 gap-2 mobile:flex-col">
-            <span>{`requested`}</span>
-            <span>{` - ${dayjs(timeWorked.createdAt).fromNow()}`}</span>
+          <div className="flex w-full sm:flex-row mobile:flex-col">
+            <span>{`${dayjs(timeWorked.begining).format("DD/MM")}`}</span>
+            <span> - </span>
+            <span>{`${dayjs(timeWorked.end).format("DD/MM")}`}</span>
           </div>
           <span>{timeWorked.notes}</span>
         </div>
@@ -288,7 +286,7 @@ const Home: NextPage = () => {
         <link rel="manifest" href="/site.webmanifest"></link>
       </Head>
       <main className="flex h-screen justify-center">
-        <div className="h-full w-full md:max-w-6xl flex flex-col gap-5">
+        <div className="h-full w-full md:max-w-6xl flex flex-col gap-5 p-4">
           <div className=" p-4 text-2xl text-slate-500">
             {!isSignedIn && (
               <div className="flex justify-center">

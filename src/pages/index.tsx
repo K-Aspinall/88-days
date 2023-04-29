@@ -17,16 +17,6 @@ type TimeWorkedWithUser = RouterOutputs["work"]["getAll"][number];
 
 dayjs.extend(relativeTime)
 
-// Generate a random color with specified brightness
-export function randomColor(brightness: number){
-  function randomChannel(brightness: number){
-    const r = 255-brightness;
-    const n = 0|((Math.random() * r) + brightness);
-    const s = n.toString(16);
-    return (s.length==1) ? '0'+s : s;
-  }
-  return '#' + randomChannel(brightness) + randomChannel(brightness) + randomChannel(brightness);
-}
 
 const UserHeader = () => {
   const { user } = useUser();
@@ -208,7 +198,7 @@ const TimeWorkedFeed = () => {
 </div>
 }
 
-const EventSourceForUser = (timeWorkeds: TimeWorkedWithUser[], color: string): EventSourceInput => {
+const EventSourceForUser = (timeWorkeds: TimeWorkedWithUser[]): EventSourceInput => {
   // For some reason all these dates need to be re-assigned to a date object ot function correctly?
   console.log(timeWorkeds)
   const events = timeWorkeds.map(x => {
@@ -218,8 +208,8 @@ const EventSourceForUser = (timeWorkeds: TimeWorkedWithUser[], color: string): E
       // Add day to calander display as should be inclusive
       end    : dayjs(new Date(x.timeWorked.end)).add(1, 'day').format('YYYY-MM-DD'),
       description: x.timeWorked.notes,
-      borderColor: !x.timeWorked.status ? "black" : color,
-      backgroundColor: !x.timeWorked.status ? "white" : color,
+      borderColor: !x.timeWorked.status ? "black" : undefined,
+      backgroundColor: !x.timeWorked.status ? "white" : undefined,
     }
   })
   console.log(events)
@@ -227,7 +217,7 @@ const EventSourceForUser = (timeWorkeds: TimeWorkedWithUser[], color: string): E
     events: [ // put the array in the `events` property
       ...events
     ],
-    color: color,     // an option!
+    //color: color,     // an option!
     textColor: 'black' // an option!
   }
 }
@@ -241,7 +231,7 @@ const DisplayCalander = () => {
 
   const timeWorkedEvents = [...data]
 
-  const eventSource = EventSourceForUser(timeWorkedEvents, randomColor(200))
+  const eventSource = EventSourceForUser(timeWorkedEvents)
 
   return (
     <FullCalendar

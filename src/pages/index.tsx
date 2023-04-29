@@ -12,8 +12,10 @@ import FullCalendar from '@fullcalendar/react' // must go before plugins
 import dayGridPlugin from '@fullcalendar/daygrid' // a plugin!
 import type { EventSourceInput } from "@fullcalendar/core";
 import { type DateValueType } from "react-tailwindcss-datepicker/dist/types";
+import type { RefetchOptions, RefetchQueryFilters, QueryObserverResult } from "@tanstack/react-query";
 
 type TimeWorkedWithUser = RouterOutputs["work"]["getAll"][number];
+type RefectType = <TPageData>(options?: RefetchOptions & RefetchQueryFilters<TPageData>) => Promise<QueryObserverResult<unknown, unknown>>;
 
 dayjs.extend(relativeTime)
 
@@ -38,7 +40,7 @@ const UserHeader = () => {
     </div>
 }
 
-const CreateTimeWorked = () => { 
+const CreateTimeWorked = (props: {refetch: RefectType}) => { 
   const [dateRange, setDateRange] = useState<DateValueType>({ 
     startDate: null, 
     endDate: null
@@ -64,8 +66,9 @@ const CreateTimeWorked = () => {
   const handleMutate = () => {
     mutate({status: valid, start: dayjs(dateRange?.startDate).toDate(), end: dayjs(dateRange?.endDate).toDate(), location: location ?? "UNKNOWN", notes: notes})
     setDateRange({startDate: null, endDate: null})
-    setNotes(undefined)
-    setLocation(undefined)
+    setNotes("")
+    setLocation("undefined")
+    void props.refetch()
   }
   
 
@@ -133,18 +136,28 @@ const TimeRemainingView = () => {
   )
 }
 
-const TimeWorkedToggleView = (props: {request: string}) => {
+const TimeWorkedToggleView = (props: {request: string, refetch: RefectType}) => {
   const { mutate } = api.work.delete.useMutation();
+
+  const handleEdit = () => {
+    alert("TODO")
+    void props.refetch()
+  }
+
+  const handleDelete = () => {
+    mutate({requestId: props.request })
+    void props.refetch()
+  }
   return (
     <div className="flex flex-row gap-3">
       <button 
         className="bg-gray-300 hover:bg-gray-500 text-black font-bold py-2 px-4 rounded" 
-        onClick={() => alert("TODO")}>
+        onClick={() => handleEdit()}>
           Edit
       </button>
       <button 
         className="bg-red-300 hover:bg-red-500 text-black font-bold py-2 px-4 rounded" 
-        onClick={() => mutate({requestId: props.request })}>
+        onClick={() => handleDelete()}>
           Delete
       </button>
     </div>
@@ -152,17 +165,17 @@ const TimeWorkedToggleView = (props: {request: string}) => {
 }
 
 
-const TimeWorkedView = (props: TimeWorkedWithUser) => {
-  const {timeWorked, user} = props
+const TimeWorkedView = (props: TimeWorkedWithUser & {refetch: RefectType}) => {
+  const {timeWorked, refetch} = props
   return (
     <div className={`flex w-full p-4 gap-5 border-slate-400 items-center ${timeWorked.status ? "bg-green-50 rounded-lg" : ""}`} key={timeWorked.id}>
-      <Image 
+      {/* <Image 
         className="h-12 w-12 rounded-full" 
         src={user.profileImageUrl} 
         alt={`@${user.username}'s profile picture`}
         width={48}
         height={48}
-      />
+      /> */}
       <div className="flex w-full sm:flex-row justify-between items-center mobile:flex-col">
         <div className="flex w-full flex-col gap-1">
           <div className="flex w-full sm:flex-row mobile:flex-col">
@@ -172,28 +185,28 @@ const TimeWorkedView = (props: TimeWorkedWithUser) => {
           </div>
           <span>{timeWorked.notes}</span>
         </div>
-        <TimeWorkedToggleView request={timeWorked.id} />
+        <TimeWorkedToggleView request={timeWorked.id} refetch={refetch}/>
       </div>
     </div>
   )
 }
 
-const TimeWorkedFeed = (props: {timeouts: TimeWorkedWithUser[]}) => {
-  const timeouts = props.timeouts
+const TimeWorkedFeed = (props: {timeouts: TimeWorkedWithUser[], refetch: RefectType}) => {
+  const {timeouts, refetch} = props
 
   return <div className="flex w-full sm:flex-row mobile:flex-col gap-6 justify-between">
     {/* Valid Work Row */}
     <div className="flex w-4/5 flex-col gap-4">
       <p className="font-bold text-lg">Work that counts:</p>
       {timeouts.filter(x => x.timeWorked.status).map((fullRequest) => 
-        <TimeWorkedView {...fullRequest} key={fullRequest.timeWorked.id}/>
+        <TimeWorkedView {...fullRequest} key={fullRequest.timeWorked.id} refetch={refetch}/>
       )}
     </div>
     {/* Invalid Work Row */}
     <div className="flex w-full flex-col gap-4">
       <p className="font-bold text-lg">Other work:</p>
         {timeouts.filter(x => !x.timeWorked.status).map((fullRequest) => 
-          <TimeWorkedView {...fullRequest} key={fullRequest.timeWorked.id}/>
+          <TimeWorkedView {...fullRequest} key={fullRequest.timeWorked.id} refetch={refetch}/>
         )}
     </div>
     
@@ -224,7 +237,7 @@ const EventSourceForUser = (timeWorkeds: TimeWorkedWithUser[]): EventSourceInput
   }
 }
 
-const DisplayCalander = (props: {timeouts: TimeWorkedWithUser[]}) => {
+const DisplayCalander = (props: {timeouts: TimeWorkedWithUser[]} ) => {
   const eventSource = EventSourceForUser(props.timeouts)
 
   return (
@@ -240,7 +253,7 @@ const DisplayCalander = (props: {timeouts: TimeWorkedWithUser[]}) => {
 
 const DisplayBody = () => {
   // Start fetching asap
-  const { data, isLoading: requestsLoading } = api.work.getAll.useQuery(undefined, {staleTime: 3000,});
+  const { data, isLoading: requestsLoading, refetch } = api.work.getAll.useQuery(undefined, {staleTime: 3000,});
 
   if(requestsLoading) return <div>{"Loading..."}</div>
   
@@ -248,10 +261,10 @@ const DisplayBody = () => {
 
   return (
     <div className="h-full w-full md:max-w-6xl flex flex-col gap-5 p-4">
-      <CreateTimeWorked />
+      <CreateTimeWorked refetch={refetch}/>
       <TimeRemainingView />
       <DisplayCalander timeouts={data}/>
-      <TimeWorkedFeed timeouts={data}/>
+      <TimeWorkedFeed timeouts={data} refetch={refetch}/>
     </div>
   )
 }

@@ -136,11 +136,18 @@ const TimeRemainingView = () => {
 const TimeWorkedToggleView = (props: {request: string}) => {
   const { mutate } = api.work.delete.useMutation();
   return (
-    <button 
-      className="bg-red-300 hover:bg-red-500 text-black font-bold py-2 px-4 rounded" 
-      onClick={() => mutate({requestId: props.request })}>
-        Cancel
-    </button>
+    <div className="flex flex-row gap-3">
+      <button 
+        className="bg-gray-300 hover:bg-gray-500 text-black font-bold py-2 px-4 rounded" 
+        onClick={() => alert("TODO")}>
+          Edit
+      </button>
+      <button 
+        className="bg-red-300 hover:bg-red-500 text-black font-bold py-2 px-4 rounded" 
+        onClick={() => mutate({requestId: props.request })}>
+          Delete
+      </button>
+    </div>
   )
 }
 
@@ -171,26 +178,21 @@ const TimeWorkedView = (props: TimeWorkedWithUser) => {
   )
 }
 
-const TimeWorkedFeed = () => {
-  const { data, isLoading: requestsLoading } = api.work.getAll.useQuery();
-  const { user } = useUser();
-
-  if(requestsLoading) return <div>{"Loading..."}</div>
-  
-  if (!data || !user) return <div>{"No data found :("}</div>
+const TimeWorkedFeed = (props: {timeouts: TimeWorkedWithUser[]}) => {
+  const timeouts = props.timeouts
 
   return <div className="flex w-full sm:flex-row mobile:flex-col gap-6 justify-between">
     {/* Valid Work Row */}
     <div className="flex w-4/5 flex-col gap-4">
       <p className="font-bold text-lg">Work that counts:</p>
-      {data.filter(x => x.timeWorked.status).map((fullRequest) => 
+      {timeouts.filter(x => x.timeWorked.status).map((fullRequest) => 
         <TimeWorkedView {...fullRequest} key={fullRequest.timeWorked.id}/>
       )}
     </div>
     {/* Invalid Work Row */}
     <div className="flex w-full flex-col gap-4">
       <p className="font-bold text-lg">Other work:</p>
-        {data.filter(x => !x.timeWorked.status).map((fullRequest) => 
+        {timeouts.filter(x => !x.timeWorked.status).map((fullRequest) => 
           <TimeWorkedView {...fullRequest} key={fullRequest.timeWorked.id}/>
         )}
     </div>
@@ -222,16 +224,8 @@ const EventSourceForUser = (timeWorkeds: TimeWorkedWithUser[]): EventSourceInput
   }
 }
 
-const DisplayCalander = () => {
-  const { data, isLoading: requestsLoading } = api.work.getAll.useQuery();
-
-  if(requestsLoading) return <div>{"Loading..."}</div>
-  
-  if (!data) return <div>{"No data found :("}</div>
-
-  const timeWorkedEvents = [...data]
-
-  const eventSource = EventSourceForUser(timeWorkedEvents)
+const DisplayCalander = (props: {timeouts: TimeWorkedWithUser[]}) => {
+  const eventSource = EventSourceForUser(props.timeouts)
 
   return (
     <FullCalendar
@@ -239,17 +233,26 @@ const DisplayCalander = () => {
       initialView="dayGridMonth"
       eventSources={[
         eventSource,
-        // any other event sources...
-        // {
-        //   events: [ // put the array in the `events` property
-        //     testStaticEvent,
-        //     testEvent,
-        //   ],
-        //   color: '200',     // an option!
-        //   textColor: 'black' // an option!
-        // }
       ]}
     />
+  )
+}
+
+const DisplayBody = () => {
+  // Start fetching asap
+  const { data, isLoading: requestsLoading } = api.work.getAll.useQuery(undefined, {staleTime: 3000,});
+
+  if(requestsLoading) return <div>{"Loading..."}</div>
+  
+  if (!data) return <div>{"No data found :("}</div>
+
+  return (
+    <div className="h-full w-full md:max-w-6xl flex flex-col gap-5 p-4">
+      <CreateTimeWorked />
+      <TimeRemainingView />
+      <DisplayCalander timeouts={data}/>
+      <TimeWorkedFeed timeouts={data}/>
+    </div>
   )
 }
 
@@ -257,10 +260,6 @@ const DisplayCalander = () => {
 const Home: NextPage = () => {
 
   const {isLoaded: userLoaded, isSignedIn} = useUser();
-
-  // Start fetching asap
-  api.work.getAll.useQuery(undefined, {staleTime: 3000,});
-
   // Return empty if div if not loadaed
   if(!userLoaded) return <div />
 
@@ -287,10 +286,7 @@ const Home: NextPage = () => {
             )}
             {!!isSignedIn && <UserHeader />}
           </div>
-          {!!isSignedIn && <CreateTimeWorked />}
-          {!!isSignedIn && <TimeRemainingView />}
-          {!!isSignedIn && <DisplayCalander />}
-          {!!isSignedIn && <TimeWorkedFeed />}
+          {!!isSignedIn && <DisplayBody />}
         </div>
       </main>
     </>

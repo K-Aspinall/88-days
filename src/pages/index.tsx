@@ -13,6 +13,7 @@ import dayGridPlugin from '@fullcalendar/daygrid' // a plugin!
 import type { EventSourceInput } from "@fullcalendar/core";
 import { type DateValueType } from "react-tailwindcss-datepicker/dist/types";
 import type { RefetchOptions, RefetchQueryFilters, QueryObserverResult } from "@tanstack/react-query";
+import {toast} from "react-hot-toast"
 
 type TimeWorkedWithUser = RouterOutputs["work"]["getAll"][number];
 type RefectType = <TPageData>(options?: RefetchOptions & RefetchQueryFilters<TPageData>) => Promise<QueryObserverResult<unknown, unknown>>;
@@ -55,10 +56,9 @@ const CreateTimeWorked = (props: {refetch: RefectType}) => {
   } 
 
   const { user } = useUser();
-  const utils = api.useContext();
   const { mutate } = api.work.create.useMutation({
-    async onMutate() {
-      await utils.work.getAll.cancel()
+    async onSuccess() {
+      await api.useContext().work.invalidate()
     }
   });
 
@@ -67,7 +67,8 @@ const CreateTimeWorked = (props: {refetch: RefectType}) => {
     mutate({status: valid, start: dayjs(dateRange?.startDate).toDate(), end: dayjs(dateRange?.endDate).toDate(), location: location ?? "UNKNOWN", notes: notes})
     setDateRange({startDate: null, endDate: null})
     setNotes("")
-    setLocation("undefined")
+    setLocation("")
+    toast.success("New work log stored!")
     void props.refetch()
   }
   
@@ -146,6 +147,8 @@ const TimeWorkedToggleView = (props: {request: string, refetch: RefectType}) => 
 
   const handleDelete = () => {
     mutate({requestId: props.request })
+    toast.success("Work log deleted.")
+    void api.useContext().work.invalidate()
     void props.refetch()
   }
   return (
@@ -264,7 +267,8 @@ const DisplayBody = () => {
       <CreateTimeWorked refetch={refetch}/>
       <TimeRemainingView />
       <DisplayCalander timeouts={data}/>
-      <TimeWorkedFeed timeouts={data} refetch={refetch}/>
+      <TimeWorkedFeed timeouts={data} refetch={refetch} />
+      <div className="p-4"></div>
     </div>
   )
 }

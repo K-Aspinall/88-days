@@ -57,8 +57,9 @@ const CreateTimeWorked = (props: {refetch: RefectType}) => {
 
   const { user } = useUser();
   const { mutate } = api.work.create.useMutation({
-    async onSuccess() {
+    async onSettled() {
       await api.useContext().work.invalidate()
+      toast.success("New work log stored!")
     }
   });
 
@@ -68,7 +69,6 @@ const CreateTimeWorked = (props: {refetch: RefectType}) => {
     setDateRange({startDate: null, endDate: null})
     setNotes("")
     setLocation("")
-    toast.success("New work log stored!")
     void props.refetch()
   }
   
@@ -138,7 +138,12 @@ const TimeRemainingView = () => {
 }
 
 const TimeWorkedToggleView = (props: {request: string, refetch: RefectType}) => {
-  const { mutate } = api.work.delete.useMutation();
+  const { mutate } = api.work.delete.useMutation({
+    async onSettled() {
+      await api.useContext().work.invalidate()
+      toast.success("Work log deleted.")
+    }
+  });
 
   const handleEdit = () => {
     alert("TODO")
@@ -147,8 +152,6 @@ const TimeWorkedToggleView = (props: {request: string, refetch: RefectType}) => 
 
   const handleDelete = () => {
     mutate({requestId: props.request })
-    toast.success("Work log deleted.")
-    void api.useContext().work.invalidate()
     void props.refetch()
   }
   return (
@@ -172,13 +175,6 @@ const TimeWorkedView = (props: TimeWorkedWithUser & {refetch: RefectType}) => {
   const {timeWorked, refetch} = props
   return (
     <div className={`flex w-full p-4 gap-5 border-slate-400 items-center ${timeWorked.status ? "bg-green-50 rounded-lg" : ""}`} key={timeWorked.id}>
-      {/* <Image 
-        className="h-12 w-12 rounded-full" 
-        src={user.profileImageUrl} 
-        alt={`@${user.username}'s profile picture`}
-        width={48}
-        height={48}
-      /> */}
       <div className="flex w-full sm:flex-row justify-between items-center mobile:flex-col">
         <div className="flex w-full flex-col gap-1">
           <div className="flex w-full sm:flex-row mobile:flex-col">

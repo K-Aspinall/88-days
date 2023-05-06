@@ -85,6 +85,28 @@ export const worksRouter = createTRPCRouter({
     return timeWorked
   }),
 
+  // Edit work log 
+  update: privateProcedure.input(z.object({
+    requestId: z.string(),
+    start: z.date().optional(),
+    end: z.date().optional(),
+    location: z.string().optional(),
+    status: z.boolean().optional(),
+    notes: z.string().optional(),
+  })).mutation(async ({ctx, input}) => {
+    const timeWorked = await ctx.prisma.timeWorked.update({
+      where: {id: input.requestId},
+      data: {
+          begining: input.start,
+          end: input.end,
+          location: input.location,
+          status: input.status,
+          notes: input.notes,
+      }
+    })
+    return timeWorked
+  }),
+
   // Adjust valid status 
   updateStatus: privateProcedure.input(z.object({
     requestId: z.string(),

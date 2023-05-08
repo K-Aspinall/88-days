@@ -149,7 +149,10 @@ const TimeWorkedToggleView = (props: TimeWorkedWithUser & { refetch: RefectType 
   });
 
   // Setup dialog interactions
-  const dialog = document.querySelector("dialog")
+  const dialogId = `${props.timeWorked.id}-dialog`
+  // const dialog = document.querySelector("dialog")
+  // TODO: dialog selection doesnt work with component :( 
+  const dialog = document.querySelector<HTMLDialogElement>(`#${dialogId}`)
 
   dialog?.addEventListener("click", e => {
     const dialogDimensions = dialog.getBoundingClientRect()
@@ -167,6 +170,7 @@ const TimeWorkedToggleView = (props: TimeWorkedWithUser & { refetch: RefectType 
   const [timeworked, setTimeworked] = useState<TimeWorked>(props.timeWorked)
 
   const handleEdit = () => {
+    console.log("Dialog:", dialog)
     dialog?.showModal() // Opens a modal
     void props.refetch()
   }

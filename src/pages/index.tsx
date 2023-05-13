@@ -6,7 +6,7 @@ import { api, type RouterOutputs } from "~/utils/api";
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 import Image from "next/image";
-import { type SetStateAction, useState } from "react";
+import { type SetStateAction, useState, useRef } from "react";
 import Datepicker from "react-tailwindcss-datepicker";
 import FullCalendar from '@fullcalendar/react' // must go before plugins
 import dayGridPlugin from '@fullcalendar/daygrid' // a plugin!
@@ -15,7 +15,7 @@ import { type DateValueType } from "react-tailwindcss-datepicker/dist/types";
 import type { RefetchOptions, RefetchQueryFilters, QueryObserverResult } from "@tanstack/react-query";
 import { toast } from "react-hot-toast"
 import { type TimeWorked } from "@prisma/client";
-import EditDialog from "~/components/EditDialog"
+import EditDialogContent from "~/components/EditDialog"
 
 type TimeWorkedWithUser = RouterOutputs["work"]["getAll"][number];
 type RefectType = <TPageData>(options?: RefetchOptions & RefetchQueryFilters<TPageData>) => Promise<QueryObserverResult<unknown, unknown>>;
@@ -140,40 +140,13 @@ const TimeRemainingView = () => {
 
 
 
-const TimeWorkedToggleView = (props: TimeWorkedWithUser & { refetch: RefectType }) => {
+const TimeWorkedToggleView = (props: TimeWorkedWithUser & { refetch: RefectType } & { onEdit: () => void }) => {
   const { mutate } = api.work.delete.useMutation({
     async onSettled() {
       await api.useContext().work.invalidate()
       toast.success("Work log deleted.")
     }
   });
-
-  // Setup dialog interactions
-  const dialogId = `${props.timeWorked.id}-dialog`
-  // const dialog = document.querySelector("dialog")
-  // TODO: dialog selection doesnt work with component :( 
-  const dialog = document.querySelector<HTMLDialogElement>(`#${dialogId}`)
-
-  dialog?.addEventListener("click", e => {
-    const dialogDimensions = dialog.getBoundingClientRect()
-    if (
-      e.clientX < dialogDimensions.left ||
-      e.clientX > dialogDimensions.right ||
-      e.clientY < dialogDimensions.top ||
-      e.clientY > dialogDimensions.bottom
-    ) {
-      dialog.close()
-    }
-  })
-
-  // Handle current data information
-  const [timeworked, setTimeworked] = useState<TimeWorked>(props.timeWorked)
-
-  const handleEdit = () => {
-    console.log("Dialog:", dialog)
-    dialog?.showModal() // Opens a modal
-    void props.refetch()
-  }
 
   const handleDelete = () => {
     mutate({ requestId: props.timeWorked.id })
@@ -183,10 +156,9 @@ const TimeWorkedToggleView = (props: TimeWorkedWithUser & { refetch: RefectType 
 
   return (
     <div className="flex flex-row gap-3">
-      <EditDialog {...timeworked} setTimeworked={setTimeworked} />
       <button
         className="bg-gray-300 hover:bg-gray-500 text-black font-bold py-2 px-4 rounded"
-        onClick={() => handleEdit()}>
+        onClick={props.onEdit}>
         Edit
       </button>
       <button
@@ -199,8 +171,9 @@ const TimeWorkedToggleView = (props: TimeWorkedWithUser & { refetch: RefectType 
 }
 
 
-const TimeWorkedView = (props: TimeWorkedWithUser & { refetch: RefectType }) => {
+const TimeWorkedView = (props: TimeWorkedWithUser & { refetch: RefectType } & { onEdit: () => void }) => {
   const { timeWorked } = props
+
   return (
     <div className={`flex w-full p-4 gap-5 border-slate-400 items-center ${timeWorked.status ? "bg-green-50 rounded-lg" : ""}`} key={timeWorked.id}>
       <div className="flex w-full sm:flex-row justify-between items-center mobile:flex-col">
@@ -221,23 +194,80 @@ const TimeWorkedView = (props: TimeWorkedWithUser & { refetch: RefectType }) => 
 const TimeWorkedFeed = (props: { timeouts: TimeWorkedWithUser[], refetch: RefectType }) => {
   const { timeouts, refetch } = props
 
-  return <div className="flex w-full sm:flex-row mobile:flex-col gap-6 justify-between">
-    {/* Valid Work Row */}
-    <div className="flex w-4/5 flex-col gap-4">
-      <p className="font-bold text-lg">Work that counts:</p>
-      {timeouts.filter(x => x.timeWorked.status).map((fullRequest) =>
-        <TimeWorkedView {...fullRequest} key={fullRequest.timeWorked.id} refetch={refetch} />
-      )}
-    </div>
-    {/* Invalid Work Row */}
-    <div className="flex w-full flex-col gap-4">
-      <p className="font-bold text-lg">Other work:</p>
-      {timeouts.filter(x => !x.timeWorked.status).map((fullRequest) =>
-        <TimeWorkedView {...fullRequest} key={fullRequest.timeWorked.id} refetch={refetch} />
-      )}
-    </div>
+  // USE REF AND ONLY CREATE 1 DIALOG TOTAL
 
-  </div>
+  const dialogRef = useRef<HTMLDialogElement | null>(null)
+  // Handle current data information //Default to first timeout for pre-render?
+  const [timeworked, setTimeworked] = useState<TimeWorked>()
+
+  const handleSubmitEdit = (data: TimeWorked) => {
+    console.log("TODO: Edit data", data)
+  }
+
+  // Setup dialog interactions
+  const dialogId = `dialog`
+  // const dialog = document.querySelector("dialog")
+  // TODO: dialog selection doesnt work with component :( 
+  const dialog = document.querySelector<HTMLDialogElement>(`#${dialogId}`)
+
+  dialog?.addEventListener("click", e => {
+    const dialogDimensions = dialog.getBoundingClientRect()
+    if (
+      e.clientX < dialogDimensions.left ||
+      e.clientX > dialogDimensions.right ||
+      e.clientY < dialogDimensions.top ||
+      e.clientY > dialogDimensions.bottom
+    ) {
+      dialog.close()
+    }
+  })
+
+  const onCloseDialog = () => {
+    dialog?.close()
+  }
+
+  const openEditButton = () => {
+    console.log("Dialog:", dialog)
+    dialog?.showModal() // Opens a modal
+    void props.refetch()
+  }
+
+  return (
+    <div className="flex w-full sm:flex-row mobile:flex-col gap-6 justify-between">
+      <dialog id={dialogId} ref={dialogRef} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        {/* TODO: this check shouldnt be needed */}
+        {timeworked && (
+          <EditDialogContent
+            timeWorked={timeworked}
+            handleSubmit={handleSubmitEdit}
+            onClose={onCloseDialog} />
+        )}
+      </dialog>
+      {/* Valid Work Row */}
+      <div className="flex w-4/5 flex-col gap-4">
+        <p className="font-bold text-lg">Work that counts:</p>
+        {timeouts.filter(x => x.timeWorked.status).map((fullRequest) =>
+          <TimeWorkedView
+            {...fullRequest}
+            key={fullRequest.timeWorked.id}
+            refetch={refetch}
+            onEdit={openEditButton} />
+        )}
+      </div>
+      {/* Invalid Work Row */}
+      <div className="flex w-full flex-col gap-4">
+        <p className="font-bold text-lg">Other work:</p>
+        {timeouts.filter(x => !x.timeWorked.status).map((fullRequest) =>
+          <TimeWorkedView
+            {...fullRequest}
+            key={fullRequest.timeWorked.id}
+            refetch={refetch}
+            onEdit={openEditButton} />
+        )}
+      </div>
+
+    </div>
+  )
 }
 
 const EventSourceForUser = (timeWorkeds: TimeWorkedWithUser[]): EventSourceInput => {
